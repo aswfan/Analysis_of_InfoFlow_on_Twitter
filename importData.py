@@ -2,11 +2,13 @@ from ParseData import ParseData as pd
 import json
 
 if __name__ == '__main__':
-    path = 'preforERD.json'
+	# already done: MS17010, DoublePulsar, 
+    path = 'data/WannaCry.json'
 
     with open(path, 'r') as file:
         data = json.load(file)
-    # print json.dumps(data['result'], indent=4)
-    
-    for item in data['result']:
-        pd.parseData(item, '')
+    for item in data:
+    	pd.parseData(item)
+
+    print ''
+    print "Complete!"
