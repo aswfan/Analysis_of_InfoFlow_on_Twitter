@@ -6,8 +6,8 @@ import json
 
 class ParseData:
     @staticmethod
-    def parseData(item, pre_indent = ''):
-        indent = pre_indent
+    def parseData(item, progress, pre_indent = ''):
+        indent = '[' + progress + ']:' + pre_indent
         indent_2 = indent + '  '
         indent_4 = indent_2 + '  '
         indent_6 = indent_4 + '  '
@@ -53,6 +53,13 @@ class ParseData:
             favorite_count = favorite_count.replace('"', "'")
             description = description.replace('"', "'")
 
+            text = text.replace('\\', "")
+            source = source.replace('\\', "")
+            created_at = created_at.replace('\\', "")
+            favorite_count = favorite_count.replace('\\', "")
+            description = description.replace('\\', "")
+            description = description.replace('\\', "")
+
             hashtags = item['hashtags'] if 'hashtags' in item.keys() else None
             user = item['user'] if 'user' in item.keys() else None
             user_mentions = item['user_mentions'] if 'user_mentions' in item.keys() else None
@@ -69,6 +76,7 @@ class ParseData:
                 for it in hashtags:
                     text = it['text'].encode('utf-8')
                     text = text.replace('"', "'")
+                    text = text.replace('\\', "")
                     print indent_2 + 'Attempting to adding hashtag: "{}" ...'.format(text)
                     # test hashtag if already exists
                     print indent_4 + 'Checking if hashtag "{}" already exists ...'.format(text)
@@ -81,8 +89,7 @@ class ParseData:
                     except mysql.connector.Error as err:
                         print indent_6 + 'Somthing went wrong in querying hashtag(text="{}": {}'.format(text, err)
                         cnn.rollback()
-                        cnn.close()
-                        raise
+                        continue
 
                     if len(result) != 0:
                         print indent_6 + 'Hashtag "{}" already exists!'.format(text)
@@ -101,8 +108,7 @@ class ParseData:
                         except mysql.connector.Error as err:
                             print indent_6 + 'Somthing went wrong in adding hashtag(text = "{}"): {}'.format(text, err)
                             cnn.rollback()
-                            cnn.close()
-                            raise
+                            continue
                         print indent_6 + 'Successfully adding Hashtag "{}"!'.format(text)
             else:
                 print indent + "No Hashtag There!"
@@ -132,7 +138,7 @@ class ParseData:
                 profile_banner_url = str(user['profile_banner_url'].encode('utf-8')) if 'profile_banner_url' in user.keys() and user['profile_banner_url'] != None else  ''
                 profile_background_image_url = str(user['profile_background_image_url'].encode('utf-8')) if 'profile_background_image_url' in user.keys() and user['profile_background_image_url'] != None else ''
                 screen_name = str(user['screen_name'].encode('utf-8')) if 'screen_name' in user.keys() and user['screen_name'] != None else ''
-                description = str(user['description'].encode('utf-8')) if 'description' in user.keys() and user['description'] != None else ''
+                udescription = str(user['description'].encode('utf-8')) if 'description' in user.keys() and user['description'] != None else ''
 
                 ulang = ulang.replace('"', "'")
                 utc_offset = utc_offset.replace('"', "'")
@@ -153,7 +159,29 @@ class ParseData:
                 profile_banner_url = profile_banner_url.replace('"', "'")
                 profile_background_image_url = profile_background_image_url.replace('"', "'")
                 screen_name = screen_name.replace('"', "'")
-                description = description.replace('"', "'")
+                udescription = udescription.replace('"', "'")
+
+                ulang = ulang.replace('\\', "")
+                utc_offset = utc_offset.replace('\\', "")
+                favourites_count = favourites_count.replace('\\', "")
+                name = name.replace('\\', "")
+                friends_count = friends_count.replace('\\', "")
+                profile_link_color = profile_link_color.replace('\\', "")
+                u_created_at = u_created_at.replace('\\', "")
+                profile_sidebar_fill_color = profile_sidebar_fill_color.replace('\\', "")
+                time_zone = time_zone.replace('\\', "")
+                profile_image_url = profile_image_url.replace('\\', "")
+                profile_text_color = profile_text_color.replace('\\', "")
+                followers_count = followers_count.replace('\\', "")
+                location = location.replace('\\', "")
+                profile_background_color = profile_background_color.replace('\\', "")
+                statuses_count = statuses_count.replace('\\', "")
+                listed_count = listed_count.replace('\\', "")
+                profile_banner_url = profile_banner_url.replace('\\', "")
+                profile_background_image_url = profile_background_image_url.replace('\\', "")
+                screen_name = screen_name.replace('\\', "")
+                udescription = udescription.replace('\\', "")
+                udescription = udescription.replace('\\', "")
 
                 print indent_2 + 'Attempting to add user(id = {})...'.format(uid)
                 # test user if already exists
@@ -202,17 +230,19 @@ class ParseData:
                         """.format(ulang, utc_offset, favourites_count, name, friends_count, profile_link_color, u_created_at, 
                         profile_sidebar_fill_color, time_zone, profile_image_url, profile_text_color, followers_count, location, 
                         profile_background_color, statuses_count, listed_count, profile_banner_url, profile_background_image_url, 
-                        screen_name, description, uid)
+                        screen_name, udescription, uid)
                         try:
                             cursor = cnn.cursor()
                             cursor.execute(update_sql)
                             cnn.commit()
                         except mysql.connector.Error as err:
                             print indent_6 + 'Somthing went wrong in updating user(id = {}): "{}"'.format(uid, err)
+                            print ''
+                            print update_sql
                             cnn.rollback()
                             cnn.close()
-                            raise
-                        print indent_6 + 'Successfully updating user(id = {})!'.format(uid)
+                            
+                        print indent_6 + 'Finishing updating user(id = {})!'.format(uid)
                     
                 else:
                     print indent_6 + 'No such user(id = {}) there!'.format(uid)
@@ -228,14 +258,15 @@ class ParseData:
                     '''.format(uid, ulang, utc_offset, favourites_count, name, friends_count, profile_link_color, u_created_at, 
                     profile_sidebar_fill_color, time_zone, profile_image_url, profile_text_color, followers_count, location, 
                     profile_background_color, statuses_count, listed_count, profile_banner_url, profile_background_image_url, 
-                    screen_name, description)
-
+                    screen_name, udescription)
                     try:
                         cursor = cnn.cursor()
                         cursor.execute(insert_sql)
                         cnn.commit()
                     except mysql.connector.Error as err:
                         print indent_6 + 'Somthing went wrong in adding user(id = {}): "{}"'.format(uid, err)
+                        print ''
+                        print insert_sql
                         cnn.rollback()
                         cnn.close()
                         raise
@@ -306,7 +337,7 @@ class ParseData:
             if retweeted_status != None:
                 rs_id = retweeted_status['id']
                 print indent_2 + 'Attempting to insert retweeted_status(id = {})...'.format(rs_id)
-                ParseData.parseData(retweeted_status, indent_2)
+                ParseData.parseData(retweeted_status, progress, indent_2)
                 print indent + 'Finished adding retweeted_status!'
             else:
                 print 'No Retweeted_Status There!'
@@ -329,13 +360,14 @@ class ParseData:
                 value("{}","{}","{}","{}","{}","{}","{}","{}","{}","{}","{}")
                 '''.format(sid, created_at, favorite_count, sid_str, 
                 lang, retweet_count, source, text, uid, description, rs_id)
-
             try:
                 cursor = cnn.cursor()
                 cursor.execute(insert_sql)
                 cnn.commit()
             except mysql.connector.Error as err:
                 print indent_2 + 'Somthing went wrong in adding status(id = {}): "{}"'.format(sid, err)
+                print ''
+                print insert_sql
                 cnn.rollback()
                 cnn.close()
                 raise
